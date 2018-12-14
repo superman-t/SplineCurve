@@ -1,2 +1,2 @@
-# hello-world
-Hello world new project template.
+# Cocos Creator Learning demo.
+A simple of cocos creator.
