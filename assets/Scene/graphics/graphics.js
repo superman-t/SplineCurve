@@ -151,24 +151,24 @@ cc.Class({
             // this.graphics.stroke()
             this.paths.push(point)
             this.graphics.strokeColor = cc.color().fromHEX('#FF0000')
-            var simplifyPoints = Simplify(this.paths, 10, true);
+            var simplifyPoints = Simplify(this.paths, 10, false);
             cc.log(this.paths.length, simplifyPoints.length)
             // this.graphics.moveTo(simplifyPoints[0].x, simplifyPoints[0].y)
-            // for(var i = 1; i < simplifyPoints.length; i++)
-            // {
-            //     this.graphics.lineTo(simplifyPoints[i].x, simplifyPoints[i].y)
-            //     this.graphics.stroke()
-            //     this.graphics.circle(simplifyPoints[i].x, simplifyPoints[i].y, 3)
-            //     this.graphics.stroke()
-            // }
+            for(var i = 0; i < simplifyPoints.length; i++)
+            {
+                // this.graphics.lineTo(simplifyPoints[i].x, simplifyPoints[i].y)
+                // this.graphics.stroke()
+                this.graphics.circle(simplifyPoints[i].x, simplifyPoints[i].y, 3)
+                this.graphics.stroke()
+            }
             
             if (simplifyPoints.length > 2) {
                 var controlPoints = this.getCurveControlPoints(simplifyPoints);
                 var n = controlPoints.firstControlPoints.length;
                 for (var i = 0; i < n; i++)
                 {
-                    this.graphics.circle(simplifyPoints[i].x, simplifyPoints[i].y, 3)
-                    this.graphics.stroke()
+                    // this.graphics.circle(simplifyPoints[i].x, simplifyPoints[i].y, 3)
+                    // this.graphics.stroke()
                     this.graphics.strokeColor = cc.color().fromHEX('#FF0000')
                     var curve = new Bezier(simplifyPoints[i].x, simplifyPoints[i].y, 
                         controlPoints.firstControlPoints[i].x, controlPoints.firstControlPoints[i].y, 
@@ -176,8 +176,8 @@ cc.Class({
                         simplifyPoints[i+1].x, simplifyPoints[i+1].y)
                     this.drawCurve(this.graphics, curve)
 
-                    curve.offset(40).forEach(doc)
-                    curve.offset(-40).forEach(doc)
+                    // curve.offset(40).forEach(doc)
+                    // curve.offset(-40).forEach(doc)
                 }
                 this.graphics.circle(simplifyPoints[simplifyPoints.length-1].x, simplifyPoints[simplifyPoints.length-1].y, 3)
                 this.graphics.stroke()
@@ -187,9 +187,10 @@ cc.Class({
                 var cy = (simplifyPoints[0].y + simplifyPoints[1].y) / 2;
                 var curve = new Bezier(simplifyPoints[0].x, simplifyPoints[0].y, cx, cy, simplifyPoints[1].x, simplifyPoints[1].y);
                 this.drawCurve(this.graphics, curve)
-                curve.offset(40).forEach(doc)
-                curve.offset(-40).forEach(doc)
+                // curve.offset(40).forEach(doc)
+                // curve.offset(-40).forEach(doc)
             }
+
             this.paths = []
         }, this)
     },
@@ -200,4 +201,10 @@ cc.Class({
     update: function (dt) {
 
     },
+
+    clear: function()
+    {
+        var self = this;
+        this.graphics.clear();
+    }
 });
