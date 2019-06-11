@@ -1,105 +1,49 @@
 const Bezier = require('bezier-js')
 const Simplify = require('simplify-js')
 const utils = Bezier.getUtils()
+const Draw = require('draw')
+const cardinalSpline = require('cardinal-spline')
+
 cc.Class({
     extends: cc.Component,
 
     properties: {
-        paths: []
+        paths: [],
+        beginSquads: [],
+        endSquads:[],
+        entityRadius: 5.0,
+        spacing: 20.0
     },
-    drawCurve: function(ctx, curve, offset) {
-        offset = offset || { x:0, y:0 };
-        var ox = offset.x;
-        var oy = offset.y;
-        var p = curve.points, i;
-        ctx.moveTo(p[0].x + ox, p[0].y + oy);
-        if(p.length === 3) {
-          ctx.quadraticCurveTo(
-            p[1].x + ox, p[1].y + oy,
-            p[2].x + ox, p[2].y + oy
-          );
-        }
-        if(p.length === 4) {
-          ctx.bezierCurveTo(
-            p[1].x + ox, p[1].y + oy,
-            p[2].x + ox, p[2].y + oy,
-            p[3].x + ox, p[3].y + oy
-          );
-        }
-        ctx.stroke();
-    },
-    
-    getCurveControlPoints: function( knots)
+
+    createSquads: function(startPos, row, colomn, dir)
     {
-        var firstControlPoints = [];
-        var secondControlPoints = [];
-        var n = knots.length - 1;
-        if (n === 1)
-		{ // Special case: Bezier curve should be a straight line.
-			// 3P1 = 2P0 + P3
-			firstControlPoints[0] = new cc.Vec2((2 * knots[0].x + knots[1].x) / 3, (2 * knots[0].y + knots[1].y) / 3);
-
-			// P2 = 2P1 – P0
-			secondControlPoints[0] = new cc.Vec2(2 * firstControlPoints[0].x - knots[0].x,  2 * firstControlPoints[0].y - knots[0].y);
-			return;
+        var self = this;
+        var pawnDiameter = this.entityRadius * 2 + this.spacing;
+        var beginX = (this.entityRadius + this.spacing * 0.5 ) * (colomn - 1);
+        var beginY = 0;
+        var squads = [];
+        var initialDir = cc.v2(0, 1);
+        dir = dir || initialDir;
+        var radians = cc.pAngleSigned(cc.pNormalize(initialDir), cc.pNormalize(dir));
+        for (var i = 0; i < row; ++i)
+        {
+            squads[i] = [];
+            for (var j = 0; j < colomn; ++j)
+            {
+                var offset = cc.v2(beginX - pawnDiameter * j, beginY - pawnDiameter * i);
+                offset.rotate(radians, offset);
+                var pos = cc.pAdd( startPos, offset)
+                this.graphics.circle(pos.x, pos.y, this.entityRadius)
+                this.graphics.stroke()
+                squads[i][j] = pos;
+            }
         }
-        // Calculate first Bezier control points
-		// Right hand side vector
-		var rhs = [];
-
-		// Set right hand side x values
-		for (var i = 1; i < n - 1; ++i)
-			rhs[i] = 4 * knots[i].x + 2 * knots[i + 1].x;
-		rhs[0] = knots[0].x + 2 * knots[1].x;
-		rhs[n - 1] = (8 * knots[n - 1].x + knots[n].x) / 2.0;
-		// Get first control points x-values
-		var x = this.getFirstControlPoints(rhs);
-
-		// Set right hand side y values
-		for (var i = 1; i < n - 1; ++i)
-			rhs[i] = 4 * knots[i].y + 2 * knots[i + 1].y;
-		rhs[0] = knots[0].y + 2 * knots[1].y;
-		rhs[n - 1] = (8 * knots[n - 1].y + knots[n].y) / 2.0;
-		// Get first control points y-values
-		var y = this.getFirstControlPoints(rhs);
-
-		// Fill output arrays.
-		for (var i = 0; i < n; ++i)
-		{
-			// First control point
-			firstControlPoints[i] = new cc.Vec2(x[i], y[i]);
-			// Second control point
-			if (i < n - 1)
-				secondControlPoints[i] = new cc.Vec2(2 * knots
-					[i + 1].x - x[i + 1], 2 *
-					knots[i + 1].y - y[i + 1]);
-			else
-				secondControlPoints[i] = new cc.Vec2((knots
-					[n].x + x[n - 1]) / 2,
-					(knots[n].y + y[n - 1]) / 2);
-		}
-        return {firstControlPoints: firstControlPoints, secondControlPoints: secondControlPoints};
+        return squads;
     },
 
-    getFirstControlPoints: function(rhs){
-        var n = rhs.length;
-        var x = [];
-        var tmp = [];
-        var b = 2.0;
-        x[0] = rhs[0] / b;
+    moveSquads: function( start, end, totalTime )
+    {
 
-        for(var i = 1; i < n; i++)
-        {
-            tmp[i] = 1 / b;
-            b = (i < n-1 ? 4.0 : 3.5) - tmp[i];
-            x[i] = (rhs[i] - x[i-1]) / b;
-        }
-
-        for(var i = 1; i < n; i++)
-        {
-            x[n - i - 1] -= tmp[n - i] * x[n - i];
-        }
-        return x;
     },
 
     // use this for initialization
@@ -109,89 +53,30 @@ cc.Class({
         this.graphics = this.getComponent(cc.Graphics)
         this.graphics.lineWidth = 2
         this.graphics.strokeColor = cc.color().fromHEX('#e5e5e5')
-        var radius = 3
-        var point1 = {x:150, y:200}
-        var point2 = {x:300, y:400}
-        var point3 = {x:400, y:150}
-
-        var curve = new Bezier(point1.x, point1.y, point2.x, point2.y, point3.x, point3.y)
-        this.graphics.circle(point1.x, point1.y, radius)
-        this.graphics.circle(point2.x, point2.y, radius)
-        this.graphics.circle(point3.x, point3.y, radius)
-        this.graphics.stroke()
-        // this.drawCurve(this.graphics, curve)
-        var doc = function(c){
-            self.drawCurve(self.graphics, c)
-        }
-        // var outline = curve.offset(25)
-        // cc.log("---->",outline.curves.length)
-        // doc(outline.curves[3])
-        // outline.forEach(doc)
-        // curve.offset(-25).forEach(doc)
 
         canvas.on(cc.Node.EventType.TOUCH_START, function(event){
+            this.clear();
+            this.graphics.strokeColor = cc.color().fromHEX('#e5e5e5')
             var touchPoints = event.getLocation()
-            // this.graphics.strokeColor = cc.color().fromHEX('#e5e5e5')
-            // this.graphics.moveTo(touchPoints.x, touchPoints.y)
             this.paths.push(touchPoints)
+            // this.beginSquads = this.createSquads( touchPoints, 5, 8);
         }, this)
 
         canvas.on(cc.Node.EventType.TOUCH_MOVE, function(event)
         {
             var touchPoints = event.getLocation()
-            // this.graphics.lineTo(touchPoints.x, touchPoints.y)
-            // this.graphics.stroke()
             this.paths.push(touchPoints)
         }, this)
-
++
         canvas.on(cc.Node.EventType.TOUCH_END, function(event)
         {
+            var self = this;
             var point = event.getLocation()
-            // this.graphics.lineTo(point.x,point.y)
-            // this.graphics.stroke()
             this.paths.push(point)
-            this.graphics.strokeColor = cc.color().fromHEX('#FF0000')
-            var simplifyPoints = Simplify(this.paths, 10, false);
-            cc.log(this.paths.length, simplifyPoints.length)
-            // this.graphics.moveTo(simplifyPoints[0].x, simplifyPoints[0].y)
-            for(var i = 0; i < simplifyPoints.length; i++)
-            {
-                // this.graphics.lineTo(simplifyPoints[i].x, simplifyPoints[i].y)
-                // this.graphics.stroke()
-                this.graphics.circle(simplifyPoints[i].x, simplifyPoints[i].y, 3)
-                this.graphics.stroke()
-            }
+
+            // this.simplifyTest();
+            this.cardinalSplineTest();
             
-            if (simplifyPoints.length > 2) {
-                var controlPoints = this.getCurveControlPoints(simplifyPoints);
-                var n = controlPoints.firstControlPoints.length;
-                for (var i = 0; i < n; i++)
-                {
-                    // this.graphics.circle(simplifyPoints[i].x, simplifyPoints[i].y, 3)
-                    // this.graphics.stroke()
-                    this.graphics.strokeColor = cc.color().fromHEX('#FF0000')
-                    var curve = new Bezier(simplifyPoints[i].x, simplifyPoints[i].y, 
-                        controlPoints.firstControlPoints[i].x, controlPoints.firstControlPoints[i].y, 
-                        controlPoints.secondControlPoints[i].x, controlPoints.secondControlPoints[i].y,
-                        simplifyPoints[i+1].x, simplifyPoints[i+1].y)
-                    this.drawCurve(this.graphics, curve)
-
-                    // curve.offset(40).forEach(doc)
-                    // curve.offset(-40).forEach(doc)
-                }
-                this.graphics.circle(simplifyPoints[simplifyPoints.length-1].x, simplifyPoints[simplifyPoints.length-1].y, 3)
-                this.graphics.stroke()
-            }
-            else{
-                var cx = (simplifyPoints[0].x + simplifyPoints[1].x) / 2;
-                var cy = (simplifyPoints[0].y + simplifyPoints[1].y) / 2;
-                var curve = new Bezier(simplifyPoints[0].x, simplifyPoints[0].y, cx, cy, simplifyPoints[1].x, simplifyPoints[1].y);
-                this.drawCurve(this.graphics, curve)
-                // curve.offset(40).forEach(doc)
-                // curve.offset(-40).forEach(doc)
-            }
-
-            this.paths = []
         }, this)
     },
 
@@ -206,5 +91,89 @@ cc.Class({
     {
         var self = this;
         this.graphics.clear();
+        this.paths = [];
+    },
+
+    cardinalSplineTest: function()
+    {
+        this.graphics.strokeColor = cc.color().fromHEX('#FF0000')
+        var simplifyPoints = Simplify(this.paths, 5, true);
+
+        var points = [];
+        for(var i = 0; i < simplifyPoints.length; i++)
+        {
+            points.push(simplifyPoints[i].x);
+            points.push(simplifyPoints[i].y);
+        }
+
+        var splinePoints = cardinalSpline(points, 0.2, 25);
+        var dis = 0;
+        var uniformPoints = [];
+        for(var i = 0; i < splinePoints.length-3; i+=2)
+        {
+            dis += cc.pDistance(cc.v2(splinePoints[i], splinePoints[i+1]), cc.v2(splinePoints[i+2], splinePoints[i+3]));
+            if ( dis >= 16 )
+            {
+                uniformPoints.push(splinePoints[i+2]);
+                uniformPoints.push(splinePoints[i+3]);
+                this.graphics.circle(splinePoints[i+2], splinePoints[i+3], 3)
+                this.graphics.stroke()
+                dis = 0;
+            }
+        }
+
+        this.graphics.moveTo(uniformPoints[0], uniformPoints[1]);
+        for( var i = 2; i < uniformPoints.length-1; i+=2)
+        {            
+            this.graphics.lineTo(uniformPoints[i], uniformPoints[i+1])
+        }
+        this.graphics.stroke()
+
+    },
+
+    simplifyTest: function()
+    {
+        this.graphics.strokeColor = cc.color().fromHEX('#FF0000')
+        var simplifyPoints = Simplify(this.paths, 2, true);
+
+        for(var i = 0; i < simplifyPoints.length; i++)
+        {
+            this.graphics.circle(simplifyPoints[i].x, simplifyPoints[i].y, 3)
+            this.graphics.stroke()
+        }
+
+        if (simplifyPoints.length > 2) {
+            var controlPoints = Draw.getCurveControlPoints(simplifyPoints);
+            var n = controlPoints.firstControlPoints.length;
+            for (var i = 0; i < n; i++)
+            {
+                this.graphics.strokeColor = cc.color().fromHEX('#FF0000')
+                var curve = new Bezier(simplifyPoints[i].x, simplifyPoints[i].y, 
+                    controlPoints.firstControlPoints[i].x, controlPoints.firstControlPoints[i].y, 
+                    controlPoints.secondControlPoints[i].x, controlPoints.secondControlPoints[i].y,
+                    simplifyPoints[i+1].x, simplifyPoints[i+1].y)
+                Draw.drawCurve(this.graphics, curve)
+            }
+            this.graphics.circle(simplifyPoints[simplifyPoints.length-1].x, simplifyPoints[simplifyPoints.length-1].y, 3)
+            this.graphics.stroke()
+        }
+        else{
+            var cx = (simplifyPoints[0].x + simplifyPoints[1].x) / 2;
+            var cy = (simplifyPoints[0].y + simplifyPoints[1].y) / 2;
+            var curve = new Bezier(simplifyPoints[0].x, simplifyPoints[0].y, cx, cy, simplifyPoints[1].x, simplifyPoints[1].y);
+            Draw.drawCurve(this.graphics, curve)
+        }
+
+        for ( var i = 1; i < simplifyPoints.length; i++)
+        {
+            var endPoint = simplifyPoints[i];
+            var endPoint2 = simplifyPoints[i - 1];
+            var direction = cc.pSub( endPoint, endPoint2);
+            // this.createSquads( endPoint, 5, 8, cc.pNormalize( direction ));
+        }
+        // var endPoint = simplifyPoints[simplifyPoints.length - 1];
+        // var endPoint2 = simplifyPoints[simplifyPoints.length - 2];
+        // var direction = cc.pSub( endPoint, endPoint2);
+        // this.endSquads = this.createSquads( point, 5, 8, cc.pNormalize( direction ));
     }
 });
