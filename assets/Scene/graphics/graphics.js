@@ -94,21 +94,76 @@ cc.Class({
         this.paths = [];
     },
 
+    simplifyUniformDistance: function ( points, sqTolerance )
+    {
+        var last = points.length - 1;
+        var simplified = [points[0]];
+
+        var dis = 0;
+        var iLast = 0;
+        for( var i = 1; i < last;)
+        {
+            var x1 = points[i].x;
+            var y1 = points[i].y;
+            var x2 = points[iLast].x;
+            var y2 = points[iLast].y;
+            var dx = x1 - x2;
+            var dy = y1 - y2;
+            var d1 = dx * dx + dy * dy;
+            if ( d1 < 0.01 )
+            {
+                i++;
+                continue;
+            }
+            iLast=i;
+            i++;
+            dis += d1;
+            if ( dis >= sqTolerance )
+            {
+                simplified.push(points[i - 1]);
+                dis = 0;
+            }
+        }
+
+        simplified.push(points[last]);
+        return simplified;
+
+    },
+
+    simplify: function (points, tolerance, highestQuality) {
+
+        if (points.length <= 2) return points;
+
+        var sqTolerance = tolerance !== undefined ? tolerance * tolerance : 1;
+        points = this.simplifyUniformDistance( points, sqTolerance );
+
+        return points;
+    },
+
     cardinalSplineTest: function()
     {
+        this.graphics.strokeColor = cc.color().fromHEX('#00FF00')
+        for(var i=0;i < this.paths.length; i++)
+        {
+            this.graphics.circle(this.paths[i].x, this.paths[i].y, 1)
+            this.graphics.stroke()
+        }
+        var simplifyPoints = Simplify(this.paths, 0.01, true);
+        
         this.graphics.strokeColor = cc.color().fromHEX('#FF0000')
-        var simplifyPoints = Simplify(this.paths, 5, true);
-
         var points = [];
         for(var i = 0; i < simplifyPoints.length; i++)
         {
             points.push(simplifyPoints[i].x);
             points.push(simplifyPoints[i].y);
+            this.graphics.circle(simplifyPoints[i].x, simplifyPoints[i].y, 3)
+            this.graphics.stroke()
         }
 
         var splinePoints = cardinalSpline(points, 0.2, 25);
         var dis = 0;
-        var uniformPoints = [];
+        var uniformPoints = [splinePoints[0], splinePoints[1]];
+        this.graphics.strokeColor = cc.color().fromHEX('#0000FF')
         for(var i = 0; i < splinePoints.length-3; i+=2)
         {
             dis += cc.pDistance(cc.v2(splinePoints[i], splinePoints[i+1]), cc.v2(splinePoints[i+2], splinePoints[i+3]));
