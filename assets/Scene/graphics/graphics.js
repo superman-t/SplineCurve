@@ -3,6 +3,7 @@ const Simplify = require('simplify-js')
 const utils = Bezier.getUtils()
 const Draw = require('draw')
 const cardinalSpline = require('cardinal-spline')
+const Spline = require('Spline')
 
 cc.Class({
     extends: cc.Component,
@@ -55,27 +56,30 @@ cc.Class({
         this.graphics.strokeColor = cc.color().fromHEX('#e5e5e5')
 
         canvas.on(cc.Node.EventType.TOUCH_START, function(event){
-            this.clear();
+            // this.clear();
             this.graphics.strokeColor = cc.color().fromHEX('#e5e5e5')
             var touchPoints = event.getLocation()
             this.paths.push(touchPoints)
+            this.graphics.circle(touchPoints.x, touchPoints.y, 3)
+            this.graphics.stroke()
             // this.beginSquads = this.createSquads( touchPoints, 5, 8);
         }, this)
 
         canvas.on(cc.Node.EventType.TOUCH_MOVE, function(event)
         {
-            var touchPoints = event.getLocation()
-            this.paths.push(touchPoints)
+            // var touchPoints = event.getLocation()
+            // this.paths.push(touchPoints)
         }, this)
 +
         canvas.on(cc.Node.EventType.TOUCH_END, function(event)
         {
-            var self = this;
-            var point = event.getLocation()
-            this.paths.push(point)
+            // var self = this;
+            // var point = event.getLocation()
+            // this.paths.push(point)
 
             // this.simplifyTest();
-            this.cardinalSplineTest();
+            // this.cardinalSplineTest();
+            // this.splineTest();
             
         }, this)
     },
@@ -89,8 +93,14 @@ cc.Class({
 
     clear: function()
     {
-        var self = this;
         this.graphics.clear();
+        this.paths = [];
+    },
+
+    generateCurve: function()
+    {
+        this.graphics.clear();
+        this.splineTest();
         this.paths = [];
     },
 
@@ -138,6 +148,35 @@ cc.Class({
         points = this.simplifyUniformDistance( points, sqTolerance );
 
         return points;
+    },
+
+    splineTest: function()
+    {
+        this.graphics.strokeColor = cc.color().fromHEX('#00FF00')
+        for(var i=0;i < this.paths.length; i++)
+        {
+            this.graphics.circle(this.paths[i].x, this.paths[i].y, 3)
+            this.graphics.stroke()
+        }
+        var simplifyPoints = Simplify(this.paths, 0.01, true);
+        // var simplifyPoints = [{x:0, y:100},{x:50, y:150},{x:100, y:100},{x:150, y:50},{x:200, y:100},{x:250, y:150}]
+
+        // for(var i=0;i < simplifyPoints.length; i++)
+        // {
+        //     this.graphics.circle(simplifyPoints[i].x, simplifyPoints[i].y, 3)
+        //     this.graphics.stroke()
+        // }
+
+        var splinePoints = Spline.naturalCubicSpline(simplifyPoints);
+        this.graphics.strokeColor = cc.color().fromHEX('#0000FF')
+        this.graphics.moveTo(splinePoints[0].x, splinePoints[0].y);
+        for( var i = 1; i < splinePoints.length; i++)
+        {            
+            this.graphics.lineTo(splinePoints[i].x, splinePoints[i].y);
+            // this.graphics.circle(splinePoints[i].x, splinePoints[i].y, 1)
+            this.graphics.stroke();
+        }
+        // this.graphics.stroke()
     },
 
     cardinalSplineTest: function()
