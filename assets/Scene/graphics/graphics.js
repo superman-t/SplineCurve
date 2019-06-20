@@ -97,11 +97,24 @@ cc.Class({
         this.paths = [];
     },
 
-    generateCurve: function()
+    generateCurve: function(event, splinetype)
     {
-        this.graphics.clear();
-        this.splineTest();
-        this.paths = [];
+        if ( splinetype === "cubic")
+        {
+            this.cubicSplineTest();
+        }
+        else if ( splinetype == "cardinal")
+        {
+            this.cardinalSplineTest();
+        }
+        else if( splinetype == "natural_cubic")
+        {
+            this.naturalCubicSplineTest();
+        }
+        else if ( splinetype === "cubic2")
+        {
+            this.cubicSplineTest2();
+        }
     },
 
     simplifyUniformDistance: function ( points, sqTolerance )
@@ -150,7 +163,7 @@ cc.Class({
         return points;
     },
 
-    splineTest: function()
+    naturalCubicSplineTest: function()
     {
         this.graphics.strokeColor = cc.color().fromHEX('#00FF00')
         for(var i=0;i < this.paths.length; i++)
@@ -159,13 +172,6 @@ cc.Class({
             this.graphics.stroke()
         }
         var simplifyPoints = Simplify(this.paths, 0.01, true);
-        // var simplifyPoints = [{x:0, y:100},{x:50, y:150},{x:100, y:100},{x:150, y:50},{x:200, y:100},{x:250, y:150}]
-
-        // for(var i=0;i < simplifyPoints.length; i++)
-        // {
-        //     this.graphics.circle(simplifyPoints[i].x, simplifyPoints[i].y, 3)
-        //     this.graphics.stroke()
-        // }
 
         var splinePoints = Spline.naturalCubicSpline(simplifyPoints);
         this.graphics.strokeColor = cc.color().fromHEX('#0000FF')
@@ -173,10 +179,58 @@ cc.Class({
         for( var i = 1; i < splinePoints.length; i++)
         {            
             this.graphics.lineTo(splinePoints[i].x, splinePoints[i].y);
-            // this.graphics.circle(splinePoints[i].x, splinePoints[i].y, 1)
-            this.graphics.stroke();
         }
-        // this.graphics.stroke()
+        this.graphics.stroke();
+    },
+
+    cubicSplineTest: function()
+    {
+        this.graphics.strokeColor = cc.color().fromHEX('#00FF00')
+        for(var i=0;i < this.paths.length; i++)
+        {
+            this.graphics.circle(this.paths[i].x, this.paths[i].y, 3)
+            this.graphics.stroke()
+        }
+        // this.paths.push({x:1, y:1});
+        // this.paths.push({x:2, y:2});
+        // this.paths.push({x:4, y:3});
+        // this.paths.push({x:5, y:4});
+        var simplifyPoints = Simplify(this.paths, 0.01, true);
+
+        var splinePoints = Spline.cubicSpline(simplifyPoints);
+        this.graphics.strokeColor = cc.color().fromHEX('#0000FF')
+        this.graphics.moveTo(splinePoints[0].x, splinePoints[0].y);
+        for( var i = 1; i < splinePoints.length; i++)
+        {            
+            this.graphics.lineTo(splinePoints[i].x, splinePoints[i].y);
+        }
+        this.graphics.stroke();
+    },
+
+    cubicSplineTest2: function()
+    {
+        this.graphics.strokeColor = cc.color().fromHEX('#00FF00')
+        for(var i=0;i < this.paths.length; i++)
+        {
+            this.graphics.circle(this.paths[i].x, this.paths[i].y, 3)
+            this.graphics.stroke()
+        }
+        // this.paths.push({x:1, y:1});
+        // this.paths.push({x:2, y:2});
+        // this.paths.push({x:4, y:3});
+        // this.paths.push({x:5, y:4});
+        // this.paths.push({x:6, y:6});
+        // this.paths.push({x:7, y:3});
+        var simplifyPoints = Simplify(this.paths, 0.01, true);
+
+        var splinePoints = Spline.cubicSpline2(simplifyPoints);
+        this.graphics.strokeColor = cc.color().fromHEX('#0000FF')
+        this.graphics.moveTo(splinePoints[0].x, splinePoints[0].y);
+        for( var i = 1; i < splinePoints.length; i++)
+        {            
+            this.graphics.lineTo(splinePoints[i].x, splinePoints[i].y);
+        }
+        this.graphics.stroke();
     },
 
     cardinalSplineTest: function()
@@ -195,11 +249,16 @@ cc.Class({
         {
             points.push(simplifyPoints[i].x);
             points.push(simplifyPoints[i].y);
-            this.graphics.circle(simplifyPoints[i].x, simplifyPoints[i].y, 3)
-            this.graphics.stroke()
         }
 
-        var splinePoints = cardinalSpline(points, 0.2, 25);
+        var splinePoints = cardinalSpline(points, 0.3, 25);
+        this.graphics.moveTo(splinePoints[0], splinePoints[1]);
+        for( var i = 2; i < splinePoints.length-1; i+=2)
+        {            
+            this.graphics.lineTo(splinePoints[i], splinePoints[i+1]);
+        }
+        this.graphics.stroke();
+        /*
         var dis = 0;
         var uniformPoints = [splinePoints[0], splinePoints[1]];
         this.graphics.strokeColor = cc.color().fromHEX('#0000FF')
@@ -222,7 +281,7 @@ cc.Class({
             this.graphics.lineTo(uniformPoints[i], uniformPoints[i+1])
         }
         this.graphics.stroke()
-
+        */
     },
 
     simplifyTest: function()

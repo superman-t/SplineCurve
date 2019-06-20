@@ -46,6 +46,7 @@
         // Set right hand side x values
         for (var i = 1; i < n - 1; ++i)
             rhs[i] = 4 * knots[i].x + 2 * knots[i + 1].x;
+            
         rhs[0] = knots[0].x + 2 * knots[1].x;
         rhs[n - 1] = (8 * knots[n - 1].x + knots[n].x) / 2.0;
         // Get first control points x-values
