@@ -1,6 +1,4 @@
-const Bezier = require('bezier-js')
 const Simplify = require('simplify-js')
-const utils = Bezier.getUtils()
 const Draw = require('draw')
 const cardinalSpline = require('cardinal-spline')
 const Spline = require('Spline')
@@ -301,11 +299,11 @@ cc.Class({
             for (var i = 0; i < n; i++)
             {
                 this.graphics.strokeColor = cc.color().fromHEX('#FF0000')
-                var curve = new Bezier(simplifyPoints[i].x, simplifyPoints[i].y, 
-                    controlPoints.firstControlPoints[i].x, controlPoints.firstControlPoints[i].y, 
-                    controlPoints.secondControlPoints[i].x, controlPoints.secondControlPoints[i].y,
-                    simplifyPoints[i+1].x, simplifyPoints[i+1].y)
-                Draw.drawCurve(this.graphics, curve)
+                var curve = [simplifyPoints[i], 
+                    controlPoints.firstControlPoints[i], 
+                    controlPoints.secondControlPoints[i],
+                    simplifyPoints[i+1]]
+                Draw.drawCurve(this.graphics, curve);
             }
             this.graphics.circle(simplifyPoints[simplifyPoints.length-1].x, simplifyPoints[simplifyPoints.length-1].y, 3)
             this.graphics.stroke()
@@ -313,7 +311,7 @@ cc.Class({
         else{
             var cx = (simplifyPoints[0].x + simplifyPoints[1].x) / 2;
             var cy = (simplifyPoints[0].y + simplifyPoints[1].y) / 2;
-            var curve = new Bezier(simplifyPoints[0].x, simplifyPoints[0].y, cx, cy, simplifyPoints[1].x, simplifyPoints[1].y);
+            var curve = [simplifyPoints[0], {x:cx, y:cy}, simplifyPoints[1]];
             Draw.drawCurve(this.graphics, curve)
         }
 

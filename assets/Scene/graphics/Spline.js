@@ -374,10 +374,7 @@
             {
                 d.push((m[i+1] - m[i]) / (h[i] * 6));
             }
-            for( var i = 0; i < n; i++)
-            {
-                cc.log(a[i], b[i], m[i]/2, d[i]);
-            }
+            
             var uniformPoints = [];
             for( var i = 0; i < n; i++)
             {
