@@ -116,8 +116,8 @@ return intervalPoints;
 
 ### 引用参考
 
-[CubicSpline](https://www.cnblogs.com/flysun027/p/10371726.html)  
-[NaturalCubicSpline](http://mathworld.wolfram.com/CubicSpline.html)  
-[三次样条曲线](https://zhuanlan.zhihu.com/p/62860859)  
-[三对角矩阵求解算法](https://zh.wikipedia.org/wiki/%E4%B8%89%E5%AF%B9%E8%A7%92%E7%9F%A9%E9%98%B5%E7%AE%97%E6%B3%95)  
-[基数样条曲线](https://en.wikipedia.org/wiki/Cubic_Hermite_spline)  
+1. [CubicSpline](https://www.cnblogs.com/flysun027/p/10371726.html)  
+2. [NaturalCubicSpline](http://mathworld.wolfram.com/CubicSpline.html)  
+3. [三次样条曲线](https://zhuanlan.zhihu.com/p/62860859)  
+4. [三对角矩阵求解算法](https://zh.wikipedia.org/wiki/%E4%B8%89%E5%AF%B9%E8%A7%92%E7%9F%A9%E9%98%B5%E7%AE%97%E6%B3%95)  
+5. [基数样条曲线](https://en.wikipedia.org/wiki/Cubic_Hermite_spline)  
