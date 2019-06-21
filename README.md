@@ -38,7 +38,7 @@ for( auto t = 0; t <= 1; t+=step)
 1. 曲线在端点处的0阶，1阶，2阶导数相等，也即曲线连续，这是保持平滑的条件
 2. 一阶导数连续![](image/equation1.svg)，有N-1个方程
 3. 二阶导数连续![](image/equation2.svg)，有N-1个方程
-4. 前一曲线的结尾=后一曲线的开始![](image/equation3.svg)![](image/equation4.svg)，再加上0点和N+1点，所以有2(N-1)+2=2N个方程
+4. 前一曲线的结尾=后一曲线的开始![](image/equation3.svg)，再加上0点和N+1点，所以有2(N-1)+2=2N个方程
 5. 以上共有4N-2个方程
 6. 剩下两个方程从曲线边界条件取得，由此区分出三种曲线，只是边界条件不一样。
 7. Natural: 在首尾端点二阶导数为0![](image/equation5.svg)
@@ -90,7 +90,7 @@ var tdma = function(L, R)
 包含张量参数c  
 ![](image/cardinal1.svg)  
 
-更具一下公式的主要算法步骤  
+根据以下公式，主要算法步骤  
 ![](image/cardinal3.svg)
 ```javascript
 var intervalPoints = [];
