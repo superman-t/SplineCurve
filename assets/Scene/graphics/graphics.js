@@ -97,22 +97,75 @@ cc.Class({
 
     generateCurve: function(event, splinetype)
     {
-        if ( splinetype === "cubic")
+        if (this.paths.length <= 0) return;
+        this.graphics.strokeColor = cc.color().fromHEX('#00FF00')
+        for(var i=0;i < this.paths.length; i++)
         {
-            this.cubicSplineTest();
+            this.graphics.circle(this.paths[i].x, this.paths[i].y, 3)
+            this.graphics.stroke()
         }
-        else if ( splinetype == "cardinal")
+        var simplifyPoints = Simplify(this.paths, 0.01, true);
+        var splinePoints;
+        var color;
+        switch( splinetype )
         {
-            this.cardinalSplineTest();
+            case "bezier":
+                {
+                    splinePoints = Spline.bezierSpline(simplifyPoints);
+                    if (simplifyPoints.length > 2) {
+                        var controlPoints = splinePoints;
+                        var n = controlPoints.firstControlPoints.length;
+                        for (var i = 0; i < n; i++)
+                        {
+                            this.graphics.strokeColor = cc.color().fromHEX('#FF0000')
+                            var curve = [simplifyPoints[i], 
+                                controlPoints.firstControlPoints[i], 
+                                controlPoints.secondControlPoints[i],
+                                simplifyPoints[i+1]]
+                            Draw.drawCurve(this.graphics, curve);
+                        }
+                    }
+                    else
+                    {
+                        var cx = (simplifyPoints[0].x + simplifyPoints[1].x) / 2;
+                        var cy = (simplifyPoints[0].y + simplifyPoints[1].y) / 2;
+                        var curve = [simplifyPoints[0], {x:cx, y:cy}, simplifyPoints[1]];
+                        Draw.drawCurve(this.graphics, curve)
+                    }
+                    return;
+                }
+            break;
+            case "cardinal":
+                splinePoints = Spline.cardinalSpline(simplifyPoints);
+                color = '#00FF00';
+            break;
+            case "natural":
+                splinePoints = Spline.naturalCubicSpline(simplifyPoints);
+                color = '#FF0000';
+            break;
+            case "clamed":
+                splinePoints = Spline.clampedCubicSpline(simplifyPoints);
+                color = '#00FFFF';
+            break;
+            case "notaknot":
+                splinePoints = Spline.notaknotCubicSpline(simplifyPoints);
+                color = '#FFFF00';
+            break;
+            case "clear":
+                {
+                    this.clear();
+                    return;
+                }
+            break;
         }
-        else if( splinetype == "natural_cubic")
-        {
-            this.naturalCubicSplineTest();
+
+        this.graphics.strokeColor = cc.color().fromHEX(color)
+        this.graphics.moveTo(splinePoints[0].x, splinePoints[0].y);
+        for( var i = 1; i < splinePoints.length; i++)
+        {            
+            this.graphics.lineTo(splinePoints[i].x, splinePoints[i].y);
         }
-        else if ( splinetype === "cubic2")
-        {
-            this.cubicSplineTest2();
-        }
+        this.graphics.stroke();
     },
 
     simplifyUniformDistance: function ( points, sqTolerance )
@@ -160,171 +213,4 @@ cc.Class({
 
         return points;
     },
-
-    naturalCubicSplineTest: function()
-    {
-        this.graphics.strokeColor = cc.color().fromHEX('#00FF00')
-        for(var i=0;i < this.paths.length; i++)
-        {
-            this.graphics.circle(this.paths[i].x, this.paths[i].y, 3)
-            this.graphics.stroke()
-        }
-        var simplifyPoints = Simplify(this.paths, 0.01, true);
-
-        var splinePoints = Spline.naturalCubicSpline(simplifyPoints);
-        this.graphics.strokeColor = cc.color().fromHEX('#0000FF')
-        this.graphics.moveTo(splinePoints[0].x, splinePoints[0].y);
-        for( var i = 1; i < splinePoints.length; i++)
-        {            
-            this.graphics.lineTo(splinePoints[i].x, splinePoints[i].y);
-        }
-        this.graphics.stroke();
-    },
-
-    cubicSplineTest: function()
-    {
-        this.graphics.strokeColor = cc.color().fromHEX('#00FF00')
-        for(var i=0;i < this.paths.length; i++)
-        {
-            this.graphics.circle(this.paths[i].x, this.paths[i].y, 3)
-            this.graphics.stroke()
-        }
-        // this.paths.push({x:1, y:1});
-        // this.paths.push({x:2, y:2});
-        // this.paths.push({x:4, y:3});
-        // this.paths.push({x:5, y:4});
-        var simplifyPoints = Simplify(this.paths, 0.01, true);
-
-        var splinePoints = Spline.cubicSpline(simplifyPoints);
-        this.graphics.strokeColor = cc.color().fromHEX('#0000FF')
-        this.graphics.moveTo(splinePoints[0].x, splinePoints[0].y);
-        for( var i = 1; i < splinePoints.length; i++)
-        {            
-            this.graphics.lineTo(splinePoints[i].x, splinePoints[i].y);
-        }
-        this.graphics.stroke();
-    },
-
-    cubicSplineTest2: function()
-    {
-        this.graphics.strokeColor = cc.color().fromHEX('#00FF00')
-        for(var i=0;i < this.paths.length; i++)
-        {
-            this.graphics.circle(this.paths[i].x, this.paths[i].y, 3)
-            this.graphics.stroke()
-        }
-        // this.paths.push({x:1, y:1});
-        // this.paths.push({x:2, y:2});
-        // this.paths.push({x:4, y:3});
-        // this.paths.push({x:5, y:4});
-        // this.paths.push({x:6, y:6});
-        // this.paths.push({x:7, y:3});
-        var simplifyPoints = Simplify(this.paths, 0.01, true);
-
-        var splinePoints = Spline.cubicSpline2(simplifyPoints);
-        this.graphics.strokeColor = cc.color().fromHEX('#0000FF')
-        this.graphics.moveTo(splinePoints[0].x, splinePoints[0].y);
-        for( var i = 1; i < splinePoints.length; i++)
-        {            
-            this.graphics.lineTo(splinePoints[i].x, splinePoints[i].y);
-        }
-        this.graphics.stroke();
-    },
-
-    cardinalSplineTest: function()
-    {
-        this.graphics.strokeColor = cc.color().fromHEX('#00FF00')
-        for(var i=0;i < this.paths.length; i++)
-        {
-            this.graphics.circle(this.paths[i].x, this.paths[i].y, 1)
-            this.graphics.stroke()
-        }
-        var simplifyPoints = Simplify(this.paths, 0.01, true);
-        
-        this.graphics.strokeColor = cc.color().fromHEX('#FF0000')
-        var points = [];
-        for(var i = 0; i < simplifyPoints.length; i++)
-        {
-            points.push(simplifyPoints[i].x);
-            points.push(simplifyPoints[i].y);
-        }
-
-        var splinePoints = cardinalSpline(points, 0.3, 25);
-        this.graphics.moveTo(splinePoints[0], splinePoints[1]);
-        for( var i = 2; i < splinePoints.length-1; i+=2)
-        {            
-            this.graphics.lineTo(splinePoints[i], splinePoints[i+1]);
-        }
-        this.graphics.stroke();
-        /*
-        var dis = 0;
-        var uniformPoints = [splinePoints[0], splinePoints[1]];
-        this.graphics.strokeColor = cc.color().fromHEX('#0000FF')
-        for(var i = 0; i < splinePoints.length-3; i+=2)
-        {
-            dis += cc.pDistance(cc.v2(splinePoints[i], splinePoints[i+1]), cc.v2(splinePoints[i+2], splinePoints[i+3]));
-            if ( dis >= 16 )
-            {
-                uniformPoints.push(splinePoints[i+2]);
-                uniformPoints.push(splinePoints[i+3]);
-                this.graphics.circle(splinePoints[i+2], splinePoints[i+3], 3)
-                this.graphics.stroke()
-                dis = 0;
-            }
-        }
-
-        this.graphics.moveTo(uniformPoints[0], uniformPoints[1]);
-        for( var i = 2; i < uniformPoints.length-1; i+=2)
-        {            
-            this.graphics.lineTo(uniformPoints[i], uniformPoints[i+1])
-        }
-        this.graphics.stroke()
-        */
-    },
-
-    simplifyTest: function()
-    {
-        this.graphics.strokeColor = cc.color().fromHEX('#FF0000')
-        var simplifyPoints = Simplify(this.paths, 2, true);
-
-        for(var i = 0; i < simplifyPoints.length; i++)
-        {
-            this.graphics.circle(simplifyPoints[i].x, simplifyPoints[i].y, 3)
-            this.graphics.stroke()
-        }
-
-        if (simplifyPoints.length > 2) {
-            var controlPoints = Draw.getCurveControlPoints(simplifyPoints);
-            var n = controlPoints.firstControlPoints.length;
-            for (var i = 0; i < n; i++)
-            {
-                this.graphics.strokeColor = cc.color().fromHEX('#FF0000')
-                var curve = [simplifyPoints[i], 
-                    controlPoints.firstControlPoints[i], 
-                    controlPoints.secondControlPoints[i],
-                    simplifyPoints[i+1]]
-                Draw.drawCurve(this.graphics, curve);
-            }
-            this.graphics.circle(simplifyPoints[simplifyPoints.length-1].x, simplifyPoints[simplifyPoints.length-1].y, 3)
-            this.graphics.stroke()
-        }
-        else{
-            var cx = (simplifyPoints[0].x + simplifyPoints[1].x) / 2;
-            var cy = (simplifyPoints[0].y + simplifyPoints[1].y) / 2;
-            var curve = [simplifyPoints[0], {x:cx, y:cy}, simplifyPoints[1]];
-            Draw.drawCurve(this.graphics, curve)
-        }
-
-        for ( var i = 1; i < simplifyPoints.length; i++)
-        {
-            var endPoint = simplifyPoints[i];
-            var endPoint2 = simplifyPoints[i - 1];
-            var direction = cc.pSub( endPoint, endPoint2);
-            // this.createSquads( endPoint, 5, 8, cc.pNormalize( direction ));
-        }
-        // var endPoint = simplifyPoints[simplifyPoints.length - 1];
-        // var endPoint2 = simplifyPoints[simplifyPoints.length - 2];
-        // var direction = cc.pSub( endPoint, endPoint2);
-        // this.endSquads = this.createSquads( point, 5, 8, cc.pNormalize( direction ));
-    }
 });

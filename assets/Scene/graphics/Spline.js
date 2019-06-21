@@ -203,7 +203,7 @@
 
     //https://www.cnblogs.com/flysun027/p/10371726.html
     // knots: array,[(x0, y0), (x1, y1), ... (xn, yn)]
-    Spline.cubicSpline2 = function(knots, segments)
+    var cubicTypeSpline = function(type, knots, segments)
     {
         if ( knots instanceof Array && knots.length > 0)
         {
@@ -218,23 +218,41 @@
                 d.push(( knots[i+1].y - knots[i].y ) / h[i]);
             }
 
-            // var a = [h[0]];
-            // var b = [h[1]];
-            // var c = [-(h[0] + h[1])];
-            // var f = [0];
-            // a[n] = -(h[n - 2] + h[n - 1]);
-            // b[n] = h[n - 2];
-            // c[n] = h[n - 1];
-            // f[n] = 0;
-
-            var a = [0];
-            var b = [1];
-            var c = [0];
-            var f = [0];
-            a[n] = 0;
-            b[n] = 1;
-            c[n] = 0;
-            f[n] = 0;
+            var a = [], b = [], c = [], f = [];
+            switch ( type )
+            {
+                case "natural":
+                    a = [0];
+                    b = [1];
+                    c = [0];
+                    f = [0];
+                    a[n] = 0;
+                    b[n] = 1;
+                    c[n] = 0;
+                    f[n] = 0;
+                break;
+                case "clamped":
+                    a[0] = 0;
+                    c[n] = 0;
+                    f[0] = 6 * (d[0] - a[0]);
+                    f[n] = 6 * (c[n] - d[n - 1]);
+                    c[0] = h[0];
+                    a[n] = h[n - 1];
+                    b[0] = 2 * h[0];
+                    b[n] = 2 * h[n - 1];
+                break;
+                case "notaknot":
+                    a = [h[0]];
+                    b = [h[1]];
+                    c = [-(h[0] + h[1])];
+                    a[n] = -(h[n - 2] + h[n - 1]);
+                    b[n] = h[n - 2];
+                    c[n] = h[n - 1];
+                    f = [0];
+                    f[n] = 0;
+                break;
+            }
+           
             for( var i = 1; i < n; i++)
             {
                 a[i] = h[i - 1];
@@ -374,7 +392,7 @@
             {
                 d.push((m[i+1] - m[i]) / (h[i] * 6));
             }
-            
+
             var uniformPoints = [];
             for( var i = 0; i < n; i++)
             {
@@ -397,18 +415,150 @@
         }
     };
 
-    //https://en.wikipedia.org/wiki/Cubic_Hermite_spline
-    Spline.cardinalSpline = function()
+    Spline.naturalCubicSpline = function(knots, segments)
     {
+        return cubicTypeSpline("natural", knots, segments);
+    };
 
+    Spline.clampedCubicSpline = function( knots, segments)
+    {
+        return cubicTypeSpline("clamped", knots, segments);
+    };
+
+    Spline.notaknotCubicSpline = function( knots, segments )
+    {
+        return cubicTypeSpline("notaknot", knots, segments);
+    }
+
+    //https://en.wikipedia.org/wiki/Cubic_Hermite_spline
+    //tension [0, 1]
+    // tension = 0, is catmull-rom spline
+    // mk = (1 - tension) * (p[k+1] - p[k-1]) / (t[k+1] - t[k])
+    // p[t] = (2*t^3 - 3*t^2 + 1) p[0] + (t^3 -2*t^2 + t)m[0] + (-2*t^3 + 3*t^2)p[1] + (t^3 - t^2)m[0];
+    Spline.cardinalSpline = function(knots, segments, tension)
+    {
+        segments = segments || 25;
+        tension = tension || 0.5;
+
+        var n = knots.length;
+        // need calculate p[k+1], p[k-1]
+        knots.unshift(knots[0]);
+        knots.push(knots[knots.length - 1]);
+        var p = knots;
+        var h = [];
+        for( var i = 0; i <= segments; i++)
+        {
+            var t = i / segments;
+            var t2 = t * t;
+            var t3 = t2 * t;
+            var h00 = 2 * t3 - 3*t2 + 1;
+            var h10 = t3 - 2 * t2 + t;
+            var h01 = -2*t3 + 3*t2;
+            var h11 = t3 - t2;
+            h.push({h00: h00, h10 : h10, h01 : h01, h11: h11});
+        }
+        
+        var intervalPoints = [];
+
+        for( var i = 1; i < n; i++ )
+        {
+            // t[k+1] - t[k - 1] = 2; because [t[k], t[k+1]] is a unit interval [0, 1]
+            var m0x = (1 - tension) * (p[i+1].x - p[i - 1].x) / 2;
+            var m0y = (1 - tension) * (p[i+1].y - p[i - 1].y) / 2;
+
+            var m1x = (1 - tension) * (p[i+2].x - p[i].x) / 2;
+            var m1y = (1 - tension) * (p[i+2].y - p[i].y) / 2;
+
+            for( var j = 0; j <= segments; j++)
+            {
+                var x = h[j].h00 * p[i].x + h[j].h10 * m0x + h[j].h01 * p[i+1].x + h[j].h11 * m1x;
+                var y = h[j].h00 * p[i].y + h[j].h10 * m0y + h[j].h01 * p[i+1].y + h[j].h11 * m1y;
+                intervalPoints.push({x:x, y:y});
+            }
+        }
+        return intervalPoints;
     };
 
     
+    var getFirstControlPoints = function(rhs){
+        var n = rhs.length;
+        var x = [];
+        var tmp = [];
+        var b = 2.0;
+        x[0] = rhs[0] / b;
+
+        for(var i = 1; i < n; i++)
+        {
+            tmp[i] = 1 / b;
+            b = (i < n-1 ? 4.0 : 3.5) - tmp[i];
+            x[i] = (rhs[i] - x[i-1]) / b;
+        }
+
+        for(var i = 1; i < n; i++)
+        {
+            x[n - i - 1] -= tmp[n - i] * x[n - i];
+        }
+        return x;
+    };
+
+    var getCurveControlPoints = function( knots)
+    {
+        var firstControlPoints = [];
+        var secondControlPoints = [];
+        var n = knots.length - 1;
+        if (n === 1)
+        { // Special case: Bezier curve should be a straight line.
+            // 3P1 = 2P0 + P3
+            firstControlPoints[0] = new cc.Vec2((2 * knots[0].x + knots[1].x) / 3, (2 * knots[0].y + knots[1].y) / 3);
+
+            // P2 = 2P1 – P0
+            secondControlPoints[0] = new cc.Vec2(2 * firstControlPoints[0].x - knots[0].x,  2 * firstControlPoints[0].y - knots[0].y);
+            return;
+        }
+        // Calculate first Bezier control points
+        // Right hand side vector
+        var rhs = [];
+
+        // Set right hand side x values
+        for (var i = 1; i < n - 1; ++i)
+            rhs[i] = 4 * knots[i].x + 2 * knots[i + 1].x;
+
+        rhs[0] = knots[0].x + 2 * knots[1].x;
+        rhs[n - 1] = (8 * knots[n - 1].x + knots[n].x) / 2.0;
+        // Get first control points x-values
+        var x = getFirstControlPoints(rhs);
+
+        // Set right hand side y values
+        for (var i = 1; i < n - 1; ++i)
+            rhs[i] = 4 * knots[i].y + 2 * knots[i + 1].y;
+        rhs[0] = knots[0].y + 2 * knots[1].y;
+        rhs[n - 1] = (8 * knots[n - 1].y + knots[n].y) / 2.0;
+        // Get first control points y-values
+        var y = getFirstControlPoints(rhs);
+
+        // Fill output arrays.
+        for (var i = 0; i < n; ++i)
+        {
+            // First control point
+            firstControlPoints[i] = new cc.Vec2(x[i], y[i]);
+            // Second control point
+            if (i < n - 1)
+                secondControlPoints[i] = new cc.Vec2(2 * knots
+                    [i + 1].x - x[i + 1], 2 *
+                    knots[i + 1].y - y[i + 1]);
+            else
+                secondControlPoints[i] = new cc.Vec2((knots
+                    [n].x + x[n - 1]) / 2,
+                    (knots[n].y + y[n - 1]) / 2);
+        }
+        return {firstControlPoints: firstControlPoints, secondControlPoints: secondControlPoints};
+    };
+
+
     //https://www.codeproject.com/Articles/31859/Draw-a-Smooth-Curve-through-a-Set-of-2D-Points-wit
     Spline.bezierSpline = function( knots )
     {
-
-
+        return getCurveControlPoints(knots);
     };
 
     module.exports = Spline;

@@ -7,7 +7,7 @@
         offset = offset || { x:0, y:0 };
         var ox = offset.x;
         var oy = offset.y;
-        var p = curve.length, i;
+        var p = curve, i;
         ctx.moveTo(p[0].x + ox, p[0].y + oy);
         if(p.length === 3) {
         ctx.quadraticCurveTo(
