@@ -47,38 +47,27 @@ cc.Class({
 
     // use this for initialization
     onEnable: function () {
-        var self = this
         let canvas = cc.find('Canvas')
         this.graphics = this.getComponent(cc.Graphics)
         this.graphics.lineWidth = 2
         this.graphics.strokeColor = cc.color().fromHEX('#e5e5e5')
 
         canvas.on(cc.Node.EventType.TOUCH_START, function(event){
-            // this.clear();
             this.graphics.strokeColor = cc.color().fromHEX('#e5e5e5')
             var touchPoints = event.getLocation()
             this.paths.push(touchPoints)
             this.graphics.circle(touchPoints.x, touchPoints.y, 3)
             this.graphics.stroke()
-            // this.beginSquads = this.createSquads( touchPoints, 5, 8);
         }, this)
 
         canvas.on(cc.Node.EventType.TOUCH_MOVE, function(event)
         {
-            // var touchPoints = event.getLocation()
-            // this.paths.push(touchPoints)
+
         }, this)
-+
+
         canvas.on(cc.Node.EventType.TOUCH_END, function(event)
         {
-            // var self = this;
-            // var point = event.getLocation()
-            // this.paths.push(point)
 
-            // this.simplifyTest();
-            // this.cardinalSplineTest();
-            // this.splineTest();
-            
         }, this)
     },
 
@@ -98,12 +87,7 @@ cc.Class({
     generateCurve: function(event, splinetype)
     {
         if (this.paths.length <= 0) return;
-        this.graphics.strokeColor = cc.color().fromHEX('#00FF00')
-        for(var i=0;i < this.paths.length; i++)
-        {
-            this.graphics.circle(this.paths[i].x, this.paths[i].y, 3)
-            this.graphics.stroke()
-        }
+        Draw.drawPoint(this.graphics, this.paths, '00FF00');
         var simplifyPoints = Simplify(this.paths, 0.01, true);
         var splinePoints;
         var color;
@@ -159,13 +143,7 @@ cc.Class({
             break;
         }
 
-        this.graphics.strokeColor = cc.color().fromHEX(color)
-        this.graphics.moveTo(splinePoints[0].x, splinePoints[0].y);
-        for( var i = 1; i < splinePoints.length; i++)
-        {            
-            this.graphics.lineTo(splinePoints[i].x, splinePoints[i].y);
-        }
-        this.graphics.stroke();
+        Draw.drawSpline(this.graphics, splinePoints, color);
     },
 
     simplifyUniformDistance: function ( points, sqTolerance )
